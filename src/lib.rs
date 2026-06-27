@@ -6,3 +6,4 @@ pub mod source;
 pub mod sources;
 pub mod util;
 pub mod validate;
+pub mod verify;
