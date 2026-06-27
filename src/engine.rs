@@ -1,4 +1,3 @@
-use std::sync::Mutex;
 use std::time::Instant;
 
 use crate::error::OsintError;
@@ -21,7 +20,8 @@ pub fn detect(query: &str) -> Option<&'static str> {
             14 => Some("cnpj"),
             11 => Some("cpf"),
             8 => Some("cep"),
-            2 | 3 => Some("ddd"),
+            3 => Some("bank"),
+            2 => Some("ddd"),
             _ => None,
         };
     }
@@ -38,18 +38,13 @@ pub fn collect(kind: &str, query: &str, http: &Http, sources: &[Box<dyn Source>]
         .filter(|s| s.kind() == kind)
         .collect();
 
-    let bag: Mutex<Vec<Outcome>> = Mutex::new(Vec::with_capacity(picked.len()));
-    std::thread::scope(|scope| {
-        for source in picked {
-            let bag = &bag;
-            scope.spawn(move || {
-                let outcome = run_one(source, query, http);
-                bag.lock().unwrap().push(outcome);
-            });
-        }
+    let mut results: Vec<Outcome> = std::thread::scope(|scope| {
+        let handles: Vec<_> = picked
+            .into_iter()
+            .map(|source| scope.spawn(move || run_one(source, query, http)))
+            .collect();
+        handles.into_iter().map(|h| h.join().unwrap()).collect()
     });
-
-    let mut results = bag.into_inner().unwrap();
     results.sort_by(|a, b| a.source.cmp(&b.source));
     results
 }

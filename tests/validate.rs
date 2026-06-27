@@ -32,6 +32,7 @@ fn detect_routes_by_shape() {
     assert_eq!(detect("111.444.777-35"), Some("cpf"));
     assert_eq!(detect("01310-100"), Some("cep"));
     assert_eq!(detect("21"), Some("ddd"));
+    assert_eq!(detect("001"), Some("bank"));
     assert_eq!(detect("8.8.8.8"), Some("ip"));
     assert_eq!(detect("2001:4860:4860::8888"), Some("ip"));
     assert_eq!(detect("example.com"), Some("domain"));

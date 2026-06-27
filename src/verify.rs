@@ -1,4 +1,3 @@
-use std::sync::Mutex;
 use std::time::Instant;
 
 use serde::Serialize;
@@ -20,16 +19,14 @@ pub struct Health {
 }
 
 pub fn check_all(http: &Http, sources: &[Box<dyn Source>]) -> Vec<Health> {
-    let bag: Mutex<Vec<Health>> = Mutex::new(Vec::with_capacity(sources.len()));
-    std::thread::scope(|scope| {
-        for source in sources.iter().map(|b| b.as_ref()) {
-            let bag = &bag;
-            scope.spawn(move || {
-                bag.lock().unwrap().push(probe(source, http));
-            });
-        }
+    let mut report: Vec<Health> = std::thread::scope(|scope| {
+        let handles: Vec<_> = sources
+            .iter()
+            .map(|b| b.as_ref())
+            .map(|source| scope.spawn(move || probe(source, http)))
+            .collect();
+        handles.into_iter().map(|h| h.join().unwrap()).collect()
     });
-    let mut report = bag.into_inner().unwrap();
     report.sort_by(|a, b| a.source.cmp(&b.source));
     report
 }
