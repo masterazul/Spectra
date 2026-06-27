@@ -6,8 +6,14 @@ use crate::source::Source;
 
 fn host(query: &str) -> Result<&str, OsintError> {
     let h = query.trim().trim_end_matches('.');
-    if h.is_empty() || h.contains(' ') || !h.contains('.') {
+    if h.is_empty() || !h.contains('.') || h.parse::<std::net::IpAddr>().is_ok() {
         return Err(OsintError::Invalid("domain expected".into()));
+    }
+    if !h
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
+    {
+        return Err(OsintError::Invalid("invalid characters in domain".into()));
     }
     Ok(h)
 }
@@ -39,7 +45,10 @@ impl Source for GoogleDns {
                 http.get_json(&format!("https://dns.google/resolve?name={h}&type={rtype}"));
             match answer {
                 Ok(value) => {
-                    let entries = value.get("Answer").cloned().unwrap_or(Value::Array(vec![]));
+                    let entries = match value {
+                        Value::Object(mut m) => m.remove("Answer").unwrap_or(Value::Array(vec![])),
+                        _ => Value::Array(vec![]),
+                    };
                     if entries.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
                         found = true;
                     }
@@ -114,5 +123,32 @@ impl Source for Headers {
     fn fetch(&self, query: &str, http: &Http) -> Result<Value, OsintError> {
         let h = host(query)?;
         http.head_info(&format!("https://{h}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::host;
+
+    #[test]
+    fn accepts_plain_hostnames() {
+        assert_eq!(host("github.com").unwrap(), "github.com");
+        assert_eq!(host("sub.example.co.uk.").unwrap(), "sub.example.co.uk");
+    }
+
+    #[test]
+    fn rejects_url_smuggling_and_ip_literals() {
+        for bad in [
+            "github.com@169.254.169.254",
+            "github.com/path",
+            "github.com?x=y",
+            "github.com&type=ANY",
+            "192.168.1.1",
+            "8.8.8.8",
+            "localhost",
+            "",
+        ] {
+            assert!(host(bad).is_err(), "{bad} should be rejected");
+        }
     }
 }

@@ -32,7 +32,11 @@ impl Source for IpApi {
     }
     fn fetch(&self, query: &str, http: &Http) -> Result<Value, OsintError> {
         let ip = addr(query)?;
-        http.get_json(&format!("http://ip-api.com/json/{ip}"))
+        let body = http.get_json(&format!("http://ip-api.com/json/{ip}"))?;
+        if body.get("status").and_then(|v| v.as_str()) == Some("fail") {
+            return Err(OsintError::NotFound);
+        }
+        Ok(body)
     }
 }
 
