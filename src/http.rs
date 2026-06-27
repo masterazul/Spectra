@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -5,26 +6,34 @@ use serde_json::Value;
 
 use crate::error::OsintError;
 
+const MAX_BODY: u64 = 16 * 1024 * 1024;
+
 pub struct Http {
     agent: ureq::Agent,
 }
 
 impl Http {
-    pub fn new() -> Self {
-        let tls = native_tls::TlsConnector::new().expect("failed to build tls connector");
+    pub fn new() -> Result<Self, OsintError> {
+        let tls =
+            native_tls::TlsConnector::new().map_err(|e| OsintError::Transport(e.to_string()))?;
         let agent = ureq::AgentBuilder::new()
             .timeout(Duration::from_secs(12))
             .user_agent(concat!("spectra/", env!("CARGO_PKG_VERSION")))
             .tls_connector(Arc::new(tls))
             .build();
-        Self { agent }
+        Ok(Self { agent })
     }
 
     pub fn get_json(&self, url: &str) -> Result<Value, OsintError> {
         match self.agent.get(url).call() {
-            Ok(resp) => resp
-                .into_json::<Value>()
-                .map_err(|e| OsintError::Decode(e.to_string())),
+            Ok(resp) => {
+                let mut buf = Vec::new();
+                resp.into_reader()
+                    .take(MAX_BODY)
+                    .read_to_end(&mut buf)
+                    .map_err(|e| OsintError::Transport(e.to_string()))?;
+                serde_json::from_slice::<Value>(&buf).map_err(|e| OsintError::Decode(e.to_string()))
+            }
             Err(ureq::Error::Status(404, _)) => Err(OsintError::NotFound),
             Err(ureq::Error::Status(code, _)) => Err(OsintError::Status(code)),
             Err(ureq::Error::Transport(t)) => Err(OsintError::Transport(t.to_string())),
@@ -47,11 +56,5 @@ impl Http {
             Err(ureq::Error::Status(_, resp)) => Ok(collect(resp)),
             Err(ureq::Error::Transport(t)) => Err(OsintError::Transport(t.to_string())),
         }
-    }
-}
-
-impl Default for Http {
-    fn default() -> Self {
-        Self::new()
     }
 }

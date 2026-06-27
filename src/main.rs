@@ -86,7 +86,10 @@ fn fail(message: &str) -> ExitCode {
 }
 
 fn run_collect(kind: &str, value: &str, json: bool) -> ExitCode {
-    let http = Http::new();
+    let http = match Http::new() {
+        Ok(h) => h,
+        Err(e) => return fail(&e.to_string()),
+    };
     let registry = sources::all();
     let results = engine::collect(kind, value, &http, &registry);
     if results.is_empty() {
@@ -128,7 +131,10 @@ fn run_validate(doc: &str, json: bool) {
 }
 
 fn run_verify(json: bool) -> ExitCode {
-    let http = Http::new();
+    let http = match Http::new() {
+        Ok(h) => h,
+        Err(e) => return fail(&e.to_string()),
+    };
     let registry = sources::all();
     let report = verify::check_all(&http, &registry);
     if json {
