@@ -57,10 +57,7 @@ fn main() -> ExitCode {
         }
         "verify" => run_verify(json),
         "validate" => match value {
-            Some(doc) => {
-                run_validate(doc, json);
-                ExitCode::SUCCESS
-            }
+            Some(doc) => run_validate(doc, json),
             None => fail("validate needs a document"),
         },
         "lookup" => match value {
@@ -105,16 +102,13 @@ fn run_collect(kind: &str, value: &str, json: bool) -> ExitCode {
 
 fn run_lookup(value: &str, json: bool) -> ExitCode {
     match engine::detect(value) {
-        Some("cpf") => {
-            run_validate(value, json);
-            ExitCode::SUCCESS
-        }
+        Some("cpf") => run_validate(value, json),
         Some(kind) => run_collect(kind, value, json),
         None => fail(&format!("could not detect query type for '{value}'")),
     }
 }
 
-fn run_validate(doc: &str, json: bool) {
+fn run_validate(doc: &str, json: bool) -> ExitCode {
     let cleaned = util::digits(doc);
     let (kind, valid) = match cleaned.len() {
         11 => ("cpf", validate::cpf(doc)),
@@ -127,6 +121,11 @@ fn run_validate(doc: &str, json: bool) {
     } else {
         let verdict = if valid { "valid" } else { "invalid" };
         println!("{kind} {cleaned}: {verdict}");
+    }
+    if valid {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
 }
 
