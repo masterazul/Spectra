@@ -12,6 +12,7 @@ pub enum Status {
 #[derive(Serialize)]
 pub struct Outcome {
     pub source: String,
+    pub kind: String,
     pub category: String,
     pub query: String,
     pub status: Status,

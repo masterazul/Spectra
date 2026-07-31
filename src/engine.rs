@@ -62,6 +62,7 @@ fn run_one(source: &dyn Source, query: &str, http: &Http) -> Outcome {
 
     Outcome {
         source: source.name().to_string(),
+        kind: source.kind().to_string(),
         category: source.category().to_string(),
         query: query.to_string(),
         status,
