@@ -31,7 +31,7 @@ commands:
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let json = args.iter().any(|a| a == "--json");
-    let mut positional = args.iter().filter(|a| !a.starts_with("--"));
+    let mut positional = args.iter().filter(|a| a.as_str() != "--json");
 
     let command = match positional.next() {
         Some(c) => c.as_str(),
