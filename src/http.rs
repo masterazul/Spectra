@@ -10,18 +10,26 @@ const MAX_BODY: u64 = 16 * 1024 * 1024;
 
 pub struct Http {
     agent: ureq::Agent,
+    head_agent: ureq::Agent,
 }
 
 impl Http {
     pub fn new() -> Result<Self, OsintError> {
-        let tls =
-            native_tls::TlsConnector::new().map_err(|e| OsintError::Transport(e.to_string()))?;
+        let tls = Arc::new(
+            native_tls::TlsConnector::new().map_err(|e| OsintError::Transport(e.to_string()))?,
+        );
         let agent = ureq::AgentBuilder::new()
             .timeout(Duration::from_secs(12))
             .user_agent(concat!("spectra/", env!("CARGO_PKG_VERSION")))
-            .tls_connector(Arc::new(tls))
+            .tls_connector(tls.clone())
             .build();
-        Ok(Self { agent })
+        let head_agent = ureq::AgentBuilder::new()
+            .timeout(Duration::from_secs(12))
+            .user_agent(concat!("spectra/", env!("CARGO_PKG_VERSION")))
+            .tls_connector(tls)
+            .redirects(0)
+            .build();
+        Ok(Self { agent, head_agent })
     }
 
     pub fn get_json(&self, url: &str) -> Result<Value, OsintError> {
@@ -51,7 +59,7 @@ impl Http {
             }
             Value::Object(map)
         };
-        match self.agent.get(url).call() {
+        match self.head_agent.get(url).call() {
             Ok(resp) => Ok(collect(resp)),
             Err(ureq::Error::Status(_, resp)) => Ok(collect(resp)),
             Err(ureq::Error::Transport(t)) => Err(OsintError::Transport(t.to_string())),
