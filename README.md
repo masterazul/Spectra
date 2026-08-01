@@ -13,6 +13,10 @@ The part I reach for most is `verify`. It probes every registered source and rep
 is actually reachable, so a collection doesn't die halfway through on an endpoint that was
 already down when you started.
 
+Quer testar antes de clonar? O `validate` está rodando no navegador em
+[masterazul.github.io/public/projetos](https://masterazul.github.io/public/projetos/index.html) —
+é este mesmo `src/validate.rs`, compilado para WebAssembly em 18 KB.
+
 Only public, free, legal data: government registries, postal codes, DNS, certificate
 transparency, RDAP, IP metadata, exchange rates. Nothing leaked, nothing paid, nothing
 behind a login.
