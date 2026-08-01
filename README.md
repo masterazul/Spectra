@@ -13,9 +13,10 @@ The part I reach for most is `verify`. It probes every registered source and rep
 is actually reachable, so a collection doesn't die halfway through on an endpoint that was
 already down when you started.
 
-Quer testar antes de clonar? O `validate` está rodando no navegador em
-[masterazul.github.io/public/projetos](https://masterazul.github.io/public/projetos/index.html) —
-é este mesmo `src/validate.rs`, compilado para WebAssembly em 18 KB.
+Want to try it before cloning? `validate` runs in the browser at
+[masterazul.github.io/public/projetos](https://masterazul.github.io/public/projetos/index.html).
+That page loads this very `src/validate.rs` compiled to WebAssembly — 18 KB, no dependencies,
+and the document never leaves the tab, because check digits are arithmetic, not a lookup.
 
 Only public, free, legal data: government registries, postal codes, DNS, certificate
 transparency, RDAP, IP metadata, exchange rates. Nothing leaked, nothing paid, nothing
@@ -61,10 +62,10 @@ $ spectra validate 11144477735
 cpf 11144477735: valid
 
 $ spectra verify
-[  up] cnpj-brasilapi       cnpj             142ms
-[  up] cep-viacep           cep               89ms
-[  up] domain-crtsh         domain           311ms
-[down] ip-internetdb        ip                 0ms  connection timed out
+[  up] cnpj-brasilapi       cnpj             243ms
+[  up] cep-viacep           cep              534ms
+[  up] domain-crtsh         domain         10853ms
+[down] ip-rdap              ip             12019ms  transport error
 ...
 
 $ spectra ip 8.8.8.8 --json
