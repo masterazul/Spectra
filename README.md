@@ -5,14 +5,17 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Rust](https://img.shields.io/badge/rust-2021-orange.svg)
 
-OSINT toolkit for Brazilian public-record sources. One CLI, one JSON shape, every
-source behind the same interface — plus a `verify` command that tells you which sources
-are actually up *before* you run a collection.
+Looking up one Brazilian company used to mean BrasilAPI in one tab, ViaCEP in another,
+crt.sh in a third, and then reconciling four different JSON shapes by hand. spectra puts
+18 public sources behind a single command and hands them all back in the same envelope.
 
-It only touches **public, free, legal** data: government registries (CNPJ), postal codes,
-bank registry, DNS, certificate transparency, RDAP, IP infrastructure metadata, exchange
-rates and reference data. No leaked databases, no paid "consulta" services, no scraping
-behind logins.
+The part I reach for most is `verify`. It probes every registered source and reports what
+is actually reachable, so a collection doesn't die halfway through on an endpoint that was
+already down when you started.
+
+Only public, free, legal data: government registries, postal codes, DNS, certificate
+transparency, RDAP, IP metadata, exchange rates. Nothing leaked, nothing paid, nothing
+behind a login.
 
 ## Install
 
@@ -98,8 +101,21 @@ slow or dead endpoint never blocks the healthy ones. Every source reports a norm
 - **Shape safety.** Results serialize through one envelope; `--json` output is stable
   across every command.
 
-Tested end to end: `cargo test` covers document validation, shape detection, and the
-source registry (unique names, every source exposes a probe).
+11 tests cover the parts worth pinning: check-digit math, shape detection, the source
+registry, and the host guard that keeps a lookup from being steered at an internal address.
+
+## Hardening
+
+The pipeline is scoped, not just green.
+
+- Actions run from a commit digest. A tag can be moved; a digest cannot.
+- Workflows declare `permissions: contents: read`, so `GITHUB_TOKEN` has nothing to write with.
+- `cargo audit --deny warnings` runs on every push and again weekly. Dependabot watches the
+  crates and the pinned digests alike.
+- `#![forbid(unsafe_code)]` on both crate roots — enforced by the compiler, not by habit.
+- Release builds keep overflow checks. Paired with `panic = "abort"`, an overflow stops the
+  process instead of wrapping into a wrong answer.
+- `gitleaks` reads the full history on every push.
 
 ## License
 
