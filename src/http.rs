@@ -51,12 +51,12 @@ impl Http {
     pub fn head_info(&self, url: &str) -> Result<Value, OsintError> {
         let collect = |resp: ureq::Response| {
             let mut map = serde_json::Map::new();
-            map.insert("status".into(), Value::from(resp.status()));
             for name in resp.headers_names() {
                 if let Some(value) = resp.header(&name) {
                     map.insert(name, Value::from(value));
                 }
             }
+            map.insert("status".into(), Value::from(resp.status()));
             Value::Object(map)
         };
         match self.head_agent.get(url).call() {
