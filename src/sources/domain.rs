@@ -15,6 +15,10 @@ fn host(query: &str) -> Result<&str, OsintError> {
     {
         return Err(OsintError::Invalid("invalid characters in domain".into()));
     }
+    let last = h.rsplit('.').next().unwrap_or("");
+    if !last.starts_with(|c: char| c.is_ascii_alphabetic()) {
+        return Err(OsintError::Invalid("domain expected".into()));
+    }
     Ok(h)
 }
 
@@ -147,6 +151,21 @@ mod tests {
             "8.8.8.8",
             "localhost",
             "",
+        ] {
+            assert!(host(bad).is_err(), "{bad} should be rejected");
+        }
+    }
+
+    #[test]
+    fn rejects_hosts_that_url_parsers_fold_into_ipv4() {
+        for bad in [
+            "127.1",
+            "0x7f.1",
+            "0177.0.0.1",
+            "192.168.1",
+            "169.254.43518",
+            "169.254.169.0xfe",
+            "2130706433",
         ] {
             assert!(host(bad).is_err(), "{bad} should be rejected");
         }
