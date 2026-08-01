@@ -169,7 +169,7 @@ fn list_sources(json: bool) {
                 })
             })
             .collect();
-        emit(&items, false);
+        emit(&items, true);
     } else {
         for s in &registry {
             println!("{:<20} {:<10} {}", s.name(), s.kind(), s.category());
