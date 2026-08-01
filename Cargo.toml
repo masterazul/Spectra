@@ -21,6 +21,7 @@ ureq = { version = "2", default-features = false, features = ["native-tls", "jso
 native-tls = "0.2"
 
 [profile.release]
+overflow-checks = true
 opt-level = "z"
 lto = true
 codegen-units = 1
