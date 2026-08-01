@@ -1,0 +1,23 @@
+[package]
+name = "spectra-wasm"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "WebAssembly wrapper around spectra's offline CPF/CNPJ validation"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = true
+
+[workspace]
